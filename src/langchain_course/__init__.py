@@ -1,3 +1,6 @@
+from typing import List
+from pydantic import BaseModel, Field
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -38,10 +41,27 @@ def web_search(query: str) -> str:
     return tavily_client.search(query=query)
 
 
+class Source(BaseModel):
+    """Schema for a source used by the agent"""
+
+    url: str = Field(description="The URL of the source")
+
+
+class AgentResponse(BaseModel):
+    """Schema for the agent response with answer and source"""
+
+    answer: str = Field(description="The agent's answer to the query")
+    sources: List[Source] = Field(
+        default_factory=list,
+        description="The list of sources used for generate the answer",
+    )
+
+
 llm_gpt = ChatOpenAI(model="gpt-5.4-nano", temperature=0)
+llm_lama = ChatOllama(model="qwen3.5:9b", temperature=0)
 # tools = [web_search]
 tools = [TavilySearch()]
-agent = create_agent(model=llm_gpt, tools=tools)
+agent = create_agent(model=llm_lama, tools=tools, response_format=AgentResponse)
 
 
 def main() -> None:
